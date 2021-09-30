@@ -112,3 +112,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Sound files
+
+#Data files
+/text_output/*.txt
+
+#Image files
+/image_output/*.png
+
+#Sound files
+/sound_output/*.wav
+/sound_output/*.ogg
