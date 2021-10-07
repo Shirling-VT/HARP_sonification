@@ -28,20 +28,21 @@ def find_neighbors(data,num=3):
     return updated_data
 
 def convert_mag_data(Bx_itp, By_itp, Bz_itp, fgs_gsm_time_itp):
-    #Convert mag data to a pandas dataframe and do running acerage detrend
+    #Convert mag data to a pandas dataframe
     Bint = np.stack((Bx_itp,By_itp,Bz_itp),axis=-1)
     df = pd.DataFrame(Bint, columns = ['Bx_gsm', 'By_gsm','Bz_gsm'])
     df['datetime']=fgs_gsm_time_itp
     return df
 
-def detrend(df, Bx_itp, By_itp, Bz_itp):
-    Bx_SMA = df.iloc[:,0].rolling(window=600, center=True).mean()
+def detrend(df, Bx_itp, By_itp, Bz_itp,window=600):
+    #Detrend the time series by subtracting the running average
+    Bx_SMA = df.iloc[:,0].rolling(window=window, center=True).mean()
     detrend_Bx = Bx_itp - Bx_SMA
     
-    By_SMA = df.iloc[:,1].rolling(window=600, center=True).mean()
+    By_SMA = df.iloc[:,1].rolling(window=window, center=True).mean()
     detrend_By = By_itp - By_SMA
     
-    Bz_SMA = df.iloc[:,2].rolling(window=600, center=True).mean()
+    Bz_SMA = df.iloc[:,2].rolling(window=window, center=True).mean()
     detrend_Bz = Bz_itp - Bz_SMA
     return detrend_Bx, detrend_By, detrend_Bz, Bx_SMA, By_SMA, Bz_SMA
 
@@ -51,11 +52,7 @@ def detrend_rotate(interp_pos_x,interp_pos_y,interp_pos_z,detrend_Bx,detrend_By,
     mag_field = np.stack((detrend_Bx,detrend_By,detrend_Bz),axis=-1)
     mean_field = np.stack((Bx_SMA,By_SMA,Bz_SMA),axis=-1)
     B_fac = fac_transformation(mag_field, mean_field, pos_gsm)
-    
     dB_phi = B_fac[:,1]
-    
-    print(mag_field[5000:5010,1])
-    print(B_fac[5000:5010,1])
     return dB_phi
 
 def replace_periods(pos_r, dB_phi, pos_min):

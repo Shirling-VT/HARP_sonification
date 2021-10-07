@@ -42,9 +42,9 @@ class Mag():
                                                    self.fgs_gsm_epoch_itp, self.fx0, 
                                                    self.fy0, self.fz0)
         
-    def detrend(self, df):
+    def detrend(self, df,window=600):
         self.detrend_Bx, self.detrend_By, self.detrend_Bz, self.Bx_SMA, self.By_SMA, self.Bz_SMA \
-                                                = utils.detrend(df, self.Bx_itp, self.By_itp, self.Bz_itp)
+                                                = utils.detrend(df, self.Bx_itp, self.By_itp, self.Bz_itp,window=window)
         
 class State():
     def __init__(self):
