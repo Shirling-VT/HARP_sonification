@@ -18,7 +18,8 @@ def bp_event_lists(dir_events='event_list/'):
         StopTime = df["StopTime"]
         et_dt = [datetime.datetime.strptime(ii, '%Y-%m-%d/%H:%M:%S') for ii in StopTime]
         #randomly select 2 events to plot
-        rd_ind = random.sample(range(0, len(st_dt)), 1)
+        rd_ind = random.sample(range(0, len(st_dt)), 2)
+        #rd_ind=[0]
         filename_str=filename[7:-4]
         probe='the'
         

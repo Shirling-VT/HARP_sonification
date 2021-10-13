@@ -22,6 +22,7 @@ def process_data(start_time=datetime.datetime(2008, 12, 7), end_time=datetime.da
     #load magnetic field data from CDAWeb  
     Mag_data = GSM.Mag()
     Mag_data.load_data(start_time, end_time, probe, product='fgs', coord='gsm')
+    Mag_data.despike(dBdt_th = 3.,num=10)#despike
     Mag_data.interpolate(spacing) #interpolate the mag data to be evenely spaced time series
     
     #load state/ephemeris data from CDAWeb
@@ -92,4 +93,7 @@ def process_data(start_time=datetime.datetime(2008, 12, 7), end_time=datetime.da
                             dB_phi_zero, spacing, probe, filename_str=filename_str)
     print('Plot spectrogram finished!')
     
-#process_data()
+#start_time = datetime.datetime(2008,11,18,3,40)
+#end_time = datetime.datetime(2008,11,21,3,30)
+#probe='the'
+#process_data(start_time=start_time, end_time=end_time,probe=probe)

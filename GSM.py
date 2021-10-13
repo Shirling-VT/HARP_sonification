@@ -27,6 +27,35 @@ class Mag():
     def load_data(self, start_time, end_time, probe, product, coord):
         self.fgs_gsm = thm.load_thm_fgm(start_time,end_time,probe=probe,product=product,coord=coord)
         
+    def despike(self, dBdt_th = 5.,num=10):
+        fgs_gsm_Bx = self.fgs_gsm['BX_FGS-D']
+        fgs_gsm_By = self.fgs_gsm['BY_FGS-D']
+        fgs_gsm_Bz = self.fgs_gsm['BZ_FGS-D']
+        fgs_gsm_time = self.fgs_gsm['UT']
+        
+        Bdt = [(t2 - t1).total_seconds() for t1,t2 in zip(fgs_gsm_time[:-1], fgs_gsm_time[1:])] 
+        dBxdt = np.diff(fgs_gsm_Bx)/Bdt
+        dBydt = np.diff(fgs_gsm_By)/Bdt
+        dBzdt = np.diff(fgs_gsm_Bz)/Bdt
+        
+        spike_flag1 = dBxdt > dBdt_th
+        flag1 = np.append(spike_flag1,[False])
+        flag1_nb = utils.find_neighbors(flag1,num=num)
+        
+        spike_flag2 = dBydt > dBdt_th
+        flag2 = np.append(spike_flag2,[False])
+        flag2_nb = utils.find_neighbors(flag2,num=num)
+        
+        spike_flag3 = dBzdt > dBdt_th
+        flag3 = np.append(spike_flag3,[False])
+        flag3_nb = utils.find_neighbors(flag3,num=num)
+        
+        spike_flags = flag1_nb+flag2_nb+flag3_nb
+        self.fgs_gsm['UT'] = fgs_gsm_time[~spike_flags]
+        self.fgs_gsm['BX_FGS-D'] = fgs_gsm_Bx[~spike_flags]
+        self.fgs_gsm['BY_FGS-D'] = fgs_gsm_By[~spike_flags]
+        self.fgs_gsm['BZ_FGS-D'] = fgs_gsm_Bz[~spike_flags]
+        
     def interpolate(self, spacing):
         self.fgs_gsm_time_itp, self.fgs_gsm_epoch_itp, self.fx0, self.fy0, self.fz0 \
         = interp.fgs_interpolate(self.fgs_gsm, spacing)
@@ -39,8 +68,7 @@ class Mag():
         self.Bx_itp, self.By_itp, self.Bz_itp = interp.linear_interpolate(
                                                     self.fgs_gsm_Bx_itp, self.fgs_gsm_By_itp, 
                                                    self.fgs_gsm_Bz_itp, sheath_flag_update, 
-                                                   self.fgs_gsm_epoch_itp, self.fx0, 
-                                                   self.fy0, self.fz0)
+                                                   self.fgs_gsm_epoch_itp)
         
     def detrend(self, df,window=600):
         self.detrend_Bx, self.detrend_By, self.detrend_Bz, self.Bx_SMA, self.By_SMA, self.Bz_SMA \

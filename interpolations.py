@@ -50,7 +50,7 @@ def em_interpolate(peem_time, density, fgs_gsm_epoch_itp, velocity_x, flux_x, fl
     return interp_velocity, interp_density, flux_perp
 
 def linear_interpolate(fgs_gsm_Bx_itp, fgs_gsm_By_itp, fgs_gsm_Bz_itp, sheath_flag_update,
-                       fgs_gsm_epoch_itp, fx0, fy0, fz0):
+                       fgs_gsm_epoch_itp):
     Bx_no_ms = fgs_gsm_Bx_itp[~sheath_flag_update]
     By_no_ms = fgs_gsm_By_itp[~sheath_flag_update]
     Bz_no_ms = fgs_gsm_Bz_itp[~sheath_flag_update]
@@ -60,9 +60,8 @@ def linear_interpolate(fgs_gsm_Bx_itp, fgs_gsm_By_itp, fgs_gsm_Bz_itp, sheath_fl
     fy4 = interpolate.interp1d(epoch_no_ms, By_no_ms, kind='linear',fill_value="extrapolate")
     fz4 = interpolate.interp1d(epoch_no_ms, Bz_no_ms, kind='linear',fill_value="extrapolate")
     
-    Bx_itp = fx0(fgs_gsm_epoch_itp)
-    By_itp = fy0(fgs_gsm_epoch_itp)
-    Bz_itp = fz0(fgs_gsm_epoch_itp)
+    Bx_itp = fx4(fgs_gsm_epoch_itp)
+    By_itp = fy4(fgs_gsm_epoch_itp)
+    Bz_itp = fz4(fgs_gsm_epoch_itp)
     
     return Bx_itp, By_itp, Bz_itp
-
