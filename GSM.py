@@ -38,15 +38,15 @@ class Mag():
         dBydt = np.diff(fgs_gsm_By)/Bdt
         dBzdt = np.diff(fgs_gsm_Bz)/Bdt
         
-        spike_flag1 = dBxdt > dBdt_th
+        spike_flag1 = np.absolute(dBxdt) > dBdt_th
         flag1 = np.append(spike_flag1,[False])
         flag1_nb = utils.find_neighbors(flag1,num=num)
         
-        spike_flag2 = dBydt > dBdt_th
+        spike_flag2 = np.absolute(dBydt) > dBdt_th
         flag2 = np.append(spike_flag2,[False])
         flag2_nb = utils.find_neighbors(flag2,num=num)
         
-        spike_flag3 = dBzdt > dBdt_th
+        spike_flag3 = np.absolute(dBzdt) > dBdt_th
         flag3 = np.append(spike_flag3,[False])
         flag3_nb = utils.find_neighbors(flag3,num=num)
         
