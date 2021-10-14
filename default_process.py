@@ -46,9 +46,10 @@ def process_data(start_time=datetime.datetime(2008, 12, 7), end_time=datetime.da
     ESA_data.interpolate(Mag_data.fgs_gsm_epoch_itp)
     
     #remove periods when spacecraft is in the magnetosheath
-    #magnetosheath is when r>8 AND either (1) density is above 10/CC or (2) perp flux>2e7 or (3) tailward velocity>200km/s
     sheath_flag = (State_data.pos_r > 8) & ((ESA_data.interp_density > 10) | 
-                                    (ESA_data.interp_velocity < -200) | (ESA_data.flux_perp > 2e7))
+                                            (ESA_data.interp_velocity < -200) | 
+                                            (ESA_data.flux_perp > 2e7)  | 
+                                            (ESA_data.interp_density < 0.02))
     
     #remove magnetosheath data points that are 9 sec on either side of the centered data point
     sheath_flag_update = utils.find_neighbors(sheath_flag,num=3)
@@ -95,5 +96,8 @@ def process_data(start_time=datetime.datetime(2008, 12, 7), end_time=datetime.da
     
 #start_time = datetime.datetime(2008,11,18,3,40)
 #end_time = datetime.datetime(2008,11,21,3,30)
+#probe='the'
+#start_time = datetime.datetime(2011,2,4,4,8)
+#end_time = datetime.datetime(2011,2,7,3,50)
 #probe='the'
 #process_data(start_time=start_time, end_time=end_time,probe=probe)
