@@ -25,7 +25,7 @@ def process_data(
     """Principal data processing code.
     
     :param stretchMethod:
-        The method to use for time stretching. Can be 'paulstretch_dBdt' 'wavelets'
+        The method to use for time stretching. Can be 'paulstretch_dBdt' 'wavelets' 'wavelets_dBdt'
     """
     #load magnetic field data from CDAWeb  
     Mag_data = GSM.Mag()
@@ -78,10 +78,10 @@ def process_data(
                                   Mag_data.detrend_By, Mag_data.detrend_Bz, Mag_data.Bx_SMA,
                                   Mag_data.By_SMA, Mag_data.Bz_SMA)
     
-    #replace periods when spacecraft position is at r<5 Re with zeros
+    # Replace periods when spacecraft position is at r<5 Re with zeros
     dB_phi_zero = utils.replace_periods(State_data.pos_r, dB_phi, pos_min)
     
-    #paulstretch
+    # Time stretching of data
     if stretchMethod == 'paulstretch_dBdt':
         dB_phi_dt_aft_stretch = ps_utils.paulstretch_dBdt(
             Mag_data.fgs_gsm_time_itp, start_time, end_time, dB_phi_zero, stretch, spacing,
@@ -121,4 +121,6 @@ def process_data(
 start_time = datetime.datetime(2011,2,4,4,8)
 end_time = datetime.datetime(2011,2,7,3,50)
 probe='the'
-process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod='wavelets_dBdt')
+stretchMethods = ['paulstretch_dBdt','wavelets','wavelets_dBdt']
+stretchMethod = stretchMethods[0]
+process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod=stretchMethod)
