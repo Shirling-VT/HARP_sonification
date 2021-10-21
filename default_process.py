@@ -17,8 +17,16 @@ import ESA
 #import ssl
 #ssl._create_default_https_context = ssl._create_unverified_context
 
-def process_data(start_time=datetime.datetime(2008, 12, 7), end_time=datetime.datetime(2008, 12, 10),probe='thd', 
-                 spacing = 3., pos_min = 5, stretch = 6, samplerate = 44100, filetype = ['wav'],filename_str='Events'):
+def process_data(
+    start_time=datetime.datetime(2008, 12, 7), end_time=datetime.datetime(2008, 12, 10),probe='thd', 
+    spacing = 3., pos_min = 5, stretch = 6, samplerate = 44100, filetype = ['wav'], 
+    filename_str='Events', stretchMethod='paulstretch_dBdt'
+):
+    """Principal data processing code.
+    
+    :param stretchMethod:
+        The method to use for time stretching. Can be 'paulstretch_dBdt' 'wavelets'
+    """
     #load magnetic field data from CDAWeb  
     Mag_data = GSM.Mag()
     Mag_data.load_data(start_time, end_time, probe, product='fgs', coord='gsm')
@@ -74,14 +82,27 @@ def process_data(start_time=datetime.datetime(2008, 12, 7), end_time=datetime.da
     dB_phi_zero = utils.replace_periods(State_data.pos_r, dB_phi, pos_min)
     
     #paulstretch
-    dB_phi_dt_aft_stretch = ps_utils.paulstretch_dBdt(Mag_data.fgs_gsm_time_itp, start_time, end_time, 
-                                                      dB_phi_zero, stretch, spacing,ps_window=512./44100,
-                                                      samplerate = samplerate)
+    if stretchMethod == 'paulstretch_dBdt':
+        dB_phi_dt_aft_stretch = ps_utils.paulstretch_dBdt(
+            Mag_data.fgs_gsm_time_itp, start_time, end_time, dB_phi_zero, stretch, spacing,
+            ps_window=512./44100, samplerate = samplerate
+        )
+    if stretchMethod == 'wavelets':
+        dB_phi_dt_aft_stretch = ps_utils.wavelet_stretch(
+            Mag_data.fgs_gsm_time_itp,start_time,end_time, dB_phi_zero, stretch, 
+            interpolateBefore=None, interpolateAfter=None, scaleLogSpacing=0.12
+        )
+    if stretchMethod == 'wavelets_dBdt':
+        dB_phi_dt_aft_stretch = ps_utils.wavelet_stretch_dBdt(
+            Mag_data.fgs_gsm_time_itp,start_time,end_time, dB_phi_zero, stretch, spacing,
+            interpolateBefore=None, interpolateAfter=None, scaleLogSpacing=0.12
+        )
+
     #Write sound file
     for ft in filetype:
         write_utils.write_sound_file(probe, start_time, end_time, stretch, 
                                      dB_phi_dt_aft_stretch, samplerate, ft,
-                                     filename_str=filename_str)
+                                     filename_str=filename_str,algorithm=stretchMethod)
         print('Write to %s sound file finished!' %(ft))
     
     #Plot detrended B_phi time series
@@ -97,7 +118,7 @@ def process_data(start_time=datetime.datetime(2008, 12, 7), end_time=datetime.da
 #start_time = datetime.datetime(2008,11,18,3,40)
 #end_time = datetime.datetime(2008,11,21,3,30)
 #probe='the'
-#start_time = datetime.datetime(2011,2,4,4,8)
-#end_time = datetime.datetime(2011,2,7,3,50)
-#probe='the'
-#process_data(start_time=start_time, end_time=end_time,probe=probe)
+start_time = datetime.datetime(2011,2,4,4,8)
+end_time = datetime.datetime(2011,2,7,3,50)
+probe='the'
+process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod='wavelets_dBdt')

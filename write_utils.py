@@ -24,13 +24,15 @@ def write_pos_file(start_time, end_time, pos_time, pos_x, pos_y, pos_z, probe,
     df_round2.to_csv(filename,index=False)
     
     
-def write_sound_file(probe, start_time, end_time, stretch, data, 
-                     samplerate,filetype='wav',filename_str='Events'):
+def write_sound_file(
+    probe, start_time, end_time, stretch, data, 
+    samplerate,filetype='wav',filename_str='Events',algorithm='paulstretch'
+):
     
     st_str = start_time.strftime("%Y%m%d")
     et_str = end_time.strftime("%Y%m%d")
     directory = 'outputs/'+filename_str+'_'+st_str
     if not os.path.exists(directory):
         os.mkdir(directory)
-    sf.write(directory+'/'+probe.upper()+'_dBphidt_'+st_str+'_'+et_str+'_paulstretch'+
-             str(stretch)+'.'+filetype, data, samplerate)
+    file_name = f'{probe.upper()}_dBphidt_{st_str}_{et_str}_{algorithm}_{str(stretch)}.{filetype}'
+    sf.write(os.path.join(directory,file_name), data, samplerate)
