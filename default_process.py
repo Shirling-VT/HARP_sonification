@@ -26,6 +26,7 @@ def process_data(
     
     :param stretchMethod:
         The method to use for time stretching. Can be 'paulstretch_dBdt' 'wavelets' 'wavelets_dBdt'
+        'phaseVocoder' 'phaseVocoder_dBdt' or 'wsola'
     """
     #load magnetic field data from CDAWeb  
     Mag_data = GSM.Mag()
@@ -82,20 +83,37 @@ def process_data(
     dB_phi_zero = utils.replace_periods(State_data.pos_r, dB_phi, pos_min)
     
     # Time stretching of data
+    timeStretchingInputs = (Mag_data.fgs_gsm_time_itp, start_time, end_time, dB_phi_zero, stretch)
+
     if stretchMethod == 'paulstretch_dBdt':
         dB_phi_dt_aft_stretch = ps_utils.paulstretch_dBdt(
-            Mag_data.fgs_gsm_time_itp, start_time, end_time, dB_phi_zero, stretch, spacing,
+            *timeStretchingInputs,spacing,
             ps_window=512./44100, samplerate = samplerate
         )
     if stretchMethod == 'wavelets':
         dB_phi_dt_aft_stretch = ps_utils.wavelet_stretch(
-            Mag_data.fgs_gsm_time_itp,start_time,end_time, dB_phi_zero, stretch, 
+            *timeStretchingInputs,
             interpolateBefore=None, interpolateAfter=None, scaleLogSpacing=0.12
         )
     if stretchMethod == 'wavelets_dBdt':
         dB_phi_dt_aft_stretch = ps_utils.wavelet_stretch_dBdt(
-            Mag_data.fgs_gsm_time_itp,start_time,end_time, dB_phi_zero, stretch, spacing,
+            *timeStretchingInputs,spacing,
             interpolateBefore=None, interpolateAfter=None, scaleLogSpacing=0.12
+        )
+    if stretchMethod == 'phaseVocoder':
+        dB_phi_dt_aft_stretch = ps_utils.phaseVocoder_stretch(
+            *timeStretchingInputs,
+            frameLength=512,synthesisHop=None
+        )
+    if stretchMethod == 'phaseVocoder_dBdt':
+        dB_phi_dt_aft_stretch = ps_utils.phaseVocoder_stretch_dBdt(
+            *timeStretchingInputs,spacing,
+            frameLength=512,synthesisHop=None
+        )
+    if stretchMethod == 'wsola':
+        dB_phi_dt_aft_stretch = ps_utils.WSOLA_stretch(
+            *timeStretchingInputs,
+            frameLength=512, synthesisHop=None
         )
 
     #Write sound file
@@ -121,6 +139,6 @@ def process_data(
 start_time = datetime.datetime(2011,2,4,4,8)
 end_time = datetime.datetime(2011,2,7,3,50)
 probe='the'
-stretchMethods = ['paulstretch_dBdt','wavelets','wavelets_dBdt']
-stretchMethod = stretchMethods[0]
+stretchMethods = ['paulstretch_dBdt','wavelets','wavelets_dBdt','phaseVocoder','phaseVocoder_dBdt','wsola']
+stretchMethod = stretchMethods[3]
 process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod=stretchMethod)

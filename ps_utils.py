@@ -4,6 +4,18 @@ import numpy as np
 from scipy.interpolate import interp1d
 import datetime
 
+_audiotsm_tools = None
+
+def get_audiotsm():
+    """Utility to only import audiotsm if it is used.
+    """
+    global _audiotsm_tools
+    if _audiotsm_tools is None:
+        import audiotsm
+        from audiotsm.io.array import ArrayReader, ArrayWriter
+        _audiotsm_tools = (audiotsm, ArrayReader, ArrayWriter)
+    return _audiotsm_tools
+
 #apply paulstretch to a time series 
 def thm_fgm_paulstretch(times,data,stretch=6,window=512./44100,samplerate=44100,return_time=False):
 # Window for paulstretch is specifed so as to be equivalent to a window of 512 samples when using 
@@ -81,7 +93,6 @@ def _waveletPitchShift(
     :param preserveScaling:
         Whether to preserve the scaling of the data when outputing.
     """
-    print(type(times[0]))
     sampleSeperation = (np.max(times)-np.min(times))/len(times)
     sampleSeperation = sampleSeperation.total_seconds()
     
@@ -175,3 +186,113 @@ def wavelet_stretch_dBdt(
     stretch_spacing = spacing/stretch
     dB_phi_dt_aft_stretch = np.diff(wavelets_dB_phi_zero)/stretch_spacing
     return dB_phi_dt_aft_stretch
+
+def _phaseVocoder_stretch(times,data,stretch,frameLength=512,synthesisHop=None) -> None:
+        """Time stretches the data using a phase vocoder
+        
+        See also: `audiotsm.phasevocoder <https://audiotsm.readthedocs.io/en/latest/tsm.html#audiotsm.phasevocoder>`_
+
+        :param frameLength: the length of the frames
+        :type frameLength: int
+        :param synthesisHop: 
+            the number of samples between two consecutive synthesis frames (``frameLength // 16`` by default).
+        :type synthesisHop: int
+
+        .. note::
+
+            Some samples may be clipped at the end of the data set.
+        """
+        audiotsm, ArrayReader, ArrayWriter = get_audiotsm()
+
+        if synthesisHop is None:
+            synthesisHop = frameLength//16
+        reader = ArrayReader(np.array((data,)))
+        writer = ArrayWriter(reader.channels)
+        timeSeriesModification = audiotsm.phasevocoder(
+            reader.channels,
+            speed = 1/stretch,
+            frame_length=frameLength,
+            synthesis_hop=synthesisHop,
+        )
+        timeSeriesModification.run(reader, writer)
+        return writer.data.flatten()
+
+def phaseVocoder_stretch(
+    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
+    frameLength=512,synthesisHop=None
+):
+    """Extracts data in the specified time window and performs a phase vocoder time stretch
+    on the data.
+    """
+    times, dB_phi_data = _select_data_between_start_and_end_times(
+        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero
+    )
+
+    phaseVocoder_dB_phi_zero = _phaseVocoder_stretch(
+        times,dB_phi_data,stretch,frameLength,synthesisHop
+    )
+
+    return phaseVocoder_dB_phi_zero
+
+def phaseVocoder_stretch_dBdt(
+    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch, spacing,
+    frameLength=512,synthesisHop=None
+):  
+    """Extracts data in the specified time window, performs a phase-vocoder time stretch
+    on the data, finally, spectrally whitens the data using a time-wise difference (diff).
+    """
+    phaseVocoder_dB_phi_zero = phaseVocoder_stretch(
+        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
+        frameLength,synthesisHop
+    )
+    stretch_spacing = spacing/stretch
+    dB_phi_dt_aft_stretch = np.diff(phaseVocoder_dB_phi_zero)/stretch_spacing
+    return dB_phi_dt_aft_stretch
+
+def _wsolaStretch(times,data,stretch,frameLength=512,synthesisHop=None,tolerance=None) -> None:
+        """Time stretches the data using WSOLA
+
+        See also: `audiotsm.wsola <https://audiotsm.readthedocs.io/en/latest/tsm.html#audiotsm.wsola>`_
+
+        :param frame_length: the length of the frames
+        :type frame_length: int
+        :param synthesis_hop: 
+            the number of samples between two consecutive synthesis frames (``frame_length // 8`` by default).
+        :type synthesis_hop: int
+
+        .. note::
+
+            Some samples may be clipped at the end of the data set.
+        """
+        audiotsm, ArrayReader, ArrayWriter = get_audiotsm()
+
+        if synthesisHop is None:
+            synthesisHop = frameLength//8
+        reader = ArrayReader(np.array((data,)))
+        writer = ArrayWriter(reader.channels)
+        timeSeriesModification = audiotsm.wsola(
+            reader.channels,
+            speed = 1/stretch,
+            frame_length=frameLength,
+            synthesis_hop=synthesisHop,
+            tolerance=tolerance
+        )
+        timeSeriesModification.run(reader, writer)
+        return writer.data.flatten()
+
+def WSOLA_stretch(
+    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
+    frameLength=512,synthesisHop=None,tolerance=None
+):
+    """Extracts data in the specified time window and performs a WOLSA time stretch
+    on the data.
+    """
+    times, dB_phi_data = _select_data_between_start_and_end_times(
+        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero
+    )
+
+    WSOLA_dB_phi_zero = _wsolaStretch(
+        times,dB_phi_data,stretch,frameLength,synthesisHop,tolerance
+    )
+
+    return WSOLA_dB_phi_zero
