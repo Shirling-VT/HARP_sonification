@@ -118,6 +118,8 @@ def process_data(
 
     #Write sound file
     for ft in filetype:
+        #Normalises the data set by the maximum in the interval.
+        dB_phi_dt_aft_stretch = dB_phi_dt_aft_stretch / np.max(np.abs(dB_phi_dt_aft_stretch))
         write_utils.write_sound_file(probe, start_time, end_time, stretch, 
                                      dB_phi_dt_aft_stretch, samplerate, ft,
                                      filename_str=filename_str,algorithm=stretchMethod)
@@ -140,5 +142,5 @@ start_time = datetime.datetime(2011,2,4,4,8)
 end_time = datetime.datetime(2011,2,7,3,50)
 probe='the'
 stretchMethods = ['paulstretch_dBdt','wavelets','wavelets_dBdt','phaseVocoder','phaseVocoder_dBdt','wsola']
-stretchMethod = stretchMethods[3]
-process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod=stretchMethod)
+stretchMethod = stretchMethods[0]
+process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod=stretchMethod,filename_str='Dawn_Active')
