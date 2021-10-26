@@ -26,7 +26,7 @@ def process_data(
     
     :param stretchMethod:
         The method to use for time stretching. Can be 'paulstretch_dBdt' 'wavelets' 'wavelets_dBdt'
-        'phaseVocoder' 'phaseVocoder_dBdt' or 'wsola'
+        'phaseVocoder' 'phaseVocoder_dBdt' 'wsola' or 'wsola_dBdt'
     """
     #load magnetic field data from CDAWeb  
     Mag_data = GSM.Mag()
@@ -48,7 +48,7 @@ def process_data(
     print('Write to satellite position file finished!')
     
     #load electron moments data from CDAWeb for magnetosheath interval identification
-    ESA_data = ESA.ESA();
+    ESA_data = ESA.ESA()
     ESA_data.load_data(start_time, end_time, probe)
     
     #interpolate ESA data to the fgs time stamps
@@ -115,6 +115,11 @@ def process_data(
             *timeStretchingInputs,
             frameLength=512, synthesisHop=None
         )
+    if stretchMethod == 'wsola_dBdt':
+        dB_phi_dt_aft_stretch = ps_utils.WSOLA_stretch_dBdt(
+            *timeStretchingInputs,spacing,
+            frameLength=512,synthesisHop=None
+        )
 
     #Write sound file
     for ft in filetype:
@@ -141,6 +146,7 @@ def process_data(
 start_time = datetime.datetime(2011,2,4,4,8)
 end_time = datetime.datetime(2011,2,7,3,50)
 probe='the'
-stretchMethods = ['paulstretch_dBdt','wavelets','wavelets_dBdt','phaseVocoder','phaseVocoder_dBdt','wsola']
+
+stretchMethods = ['paulstretch_dBdt','wavelets','wavelets_dBdt','phaseVocoder','phaseVocoder_dBdt','wsola','wsola_dBdt']
 stretchMethod = stretchMethods[0]
 process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod=stretchMethod,filename_str='Dawn_Active')

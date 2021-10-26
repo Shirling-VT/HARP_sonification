@@ -296,3 +296,18 @@ def WSOLA_stretch(
     )
 
     return WSOLA_dB_phi_zero
+
+def WSOLA_stretch_dBdt(
+    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch, spacing,
+    frameLength=512,synthesisHop=None,tolerance=None
+):  
+    """Extracts data in the specified time window, performs a WSOLA time stretch
+    on the data, finally, spectrally whitens the data using a time-wise difference (diff).
+    """
+    wsola_dB_phi_zero = WSOLA_stretch(
+        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
+        frameLength,synthesisHop
+    )
+    stretch_spacing = spacing/stretch
+    dB_phi_dt_aft_stretch = np.diff(wsola_dB_phi_zero)/stretch_spacing
+    return dB_phi_dt_aft_stretch
