@@ -32,7 +32,7 @@ def process_data(
     Mag_data = GSM.Mag()
     Mag_data.load_data(start_time, end_time, probe, product='fgs', coord='gsm')
     Mag_data.despike(dBdt_th = 3.,num=10)#despike
-    Mag_data.interpolate(spacing) #interpolate the mag data to be evenely spaced time series
+    Mag_data.interpolate(spacing,start_time,end_time) #interpolate the mag data to be evenely spaced time series
     
     #load state/ephemeris data from CDAWeb
     State_data = GSM.State()
