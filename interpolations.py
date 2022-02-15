@@ -2,16 +2,18 @@ from scipy import interpolate
 import numpy as np
 import datetime
 
-def fgs_interpolate(fgs_gsm, spacing):
+def fgs_interpolate(fgs_gsm, spacing, start_time, end_time):
     fgs_gsm_Bx = fgs_gsm['BX_FGS-D']
     fgs_gsm_By = fgs_gsm['BY_FGS-D']
     fgs_gsm_Bz = fgs_gsm['BZ_FGS-D']
     fgs_gsm_time = fgs_gsm['UT']
     
     fgs_gsm_epoch = [ii.timestamp() for ii in fgs_gsm_time]
+    start_epoch = start_time.timestamp()
+    end_epoch = end_time.timestamp()
     
-    num = int((fgs_gsm_epoch[-1] - fgs_gsm_epoch[0])/spacing)
-    fgs_gsm_epoch_itp = fgs_gsm_epoch[0] + np.arange(0,num+1) * spacing
+    num = int((end_epoch - start_epoch)/spacing)
+    fgs_gsm_epoch_itp = start_epoch + np.arange(0,num+1) * spacing
     
     fx0 = interpolate.interp1d(fgs_gsm_epoch, fgs_gsm_Bx, kind='linear',fill_value="extrapolate")
     fy0 = interpolate.interp1d(fgs_gsm_epoch, fgs_gsm_By, kind='linear',fill_value="extrapolate")
