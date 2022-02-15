@@ -56,9 +56,9 @@ class Mag():
         self.fgs_gsm['BY_FGS-D'] = fgs_gsm_By[~spike_flags]
         self.fgs_gsm['BZ_FGS-D'] = fgs_gsm_Bz[~spike_flags]
         
-    def interpolate(self, spacing):
+    def interpolate(self, spacing, start_time, end_time):
         self.fgs_gsm_time_itp, self.fgs_gsm_epoch_itp, self.fx0, self.fy0, self.fz0 \
-        = interp.fgs_interpolate(self.fgs_gsm, spacing)
+        = interp.fgs_interpolate(self.fgs_gsm, spacing, start_time, end_time)
 
         self.fgs_gsm_Bx_itp = self.fx0(self.fgs_gsm_epoch_itp)
         self.fgs_gsm_By_itp = self.fy0(self.fgs_gsm_epoch_itp)
