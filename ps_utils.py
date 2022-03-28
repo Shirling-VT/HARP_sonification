@@ -16,6 +16,39 @@ def get_audiotsm():
         _audiotsm_tools = (audiotsm, ArrayReader, ArrayWriter)
     return _audiotsm_tools
 
+def equal_loudness_normalization(y,samplerate,L_N=40):
+    """To obtain equal loudness contours and develop a transfer function 
+    (assuming a red noise background) to be applied to time series data so 
+    it sounds better to the human ear and removes harsh sounds
+    
+    Input: 
+        y: data to be normalized
+        samplerate: sample rate of y
+        L_N: phon loudness level of the loaded equal loudness contour, default is 40
+    Output: 
+        equal loudnss normalized time series of y
+    """
+    from scipy.interpolate import CubicSpline
+    from scipy.fft import fft, fftfreq, fftshift
+    from scipy.fft import ifft, ifftshift
+
+    n=len(y)
+    #Load equal loudness contour
+    freq, spl = pydsm.iso226.iso226_spl_contour(L_N=L_N)
+    #Calculate amplitude transfer function
+    h=10.**(spl/20)/1e5*freq/20.
+    #compute 2-sided FFT of stretched data to give 2-sided freqs and Fourier coefficents
+    Fy=fftshift(fft(y))
+    fshift = fftshift(fftfreq(y.shape[-1],d=1/samplerate))
+
+    fx = CubicSpline(freq, np.log10(h))#,fill_value="extrapolate"
+    h2 = 10**fx(abs(fshift))
+
+    h2[abs(fshift)<20]=1
+    y2=ifft(ifftshift(Fy*h2))
+    y2_real = y2.real
+    return y2_real
+
 #apply paulstretch to a time series 
 def thm_fgm_paulstretch(times,data,stretch=6,window=512./44100,samplerate=44100,return_time=False):
 # Window for paulstretch is specifed so as to be equivalent to a window of 512 samples when using 
