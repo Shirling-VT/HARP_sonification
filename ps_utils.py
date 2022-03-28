@@ -31,6 +31,7 @@ def equal_loudness_normalization(y,samplerate,L_N=40):
     from scipy.interpolate import CubicSpline
     from scipy.fft import fft, fftfreq, fftshift
     from scipy.fft import ifft, ifftshift
+    import pydsm
 
     n=len(y)
     #Load equal loudness contour
