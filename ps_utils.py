@@ -37,7 +37,7 @@ def equal_loudness_normalization(y,samplerate,L_N=40):
     #Load equal loudness contour
     freq, spl = pydsm.iso226.iso226_spl_contour(L_N=L_N)
     #Calculate amplitude transfer function
-    h=10.**(spl/20)/1e5*freq/20.
+    h=10.**(spl/20)/ 10.**(spl[0]/20)*freq/freq[0]
     #compute 2-sided FFT of stretched data to give 2-sided freqs and Fourier coefficents
     Fy=fftshift(fft(y))
     fshift = fftshift(fftfreq(y.shape[-1],d=1/samplerate))
