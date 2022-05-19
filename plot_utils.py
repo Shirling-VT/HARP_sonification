@@ -17,7 +17,7 @@ def plot_time_series(start_time, end_time, times, data, probe, ylim=[-20,20],fil
     
     
     fig.patch.set_facecolor('k')
-    ax1.plot(times,data,c='w', linewidth=0.2)
+    ax1.plot(times,data,c='w', linewidth=0.4)
     ax1.set(xlim=xlim,ylim=ylim)
     
     directory = 'outputs/'+filename_str+'_'+start_time.strftime("%Y%m%d")
