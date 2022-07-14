@@ -51,7 +51,7 @@ def equal_loudness_normalization(y,samplerate,L_N=40):
     return y2_real
 
 #apply paulstretch to a time series 
-def thm_fgm_paulstretch(times,data,stretch=6,window=512./44100,samplerate=44100,return_time=False):
+def _paul_stretch(times,data,stretch=6,window=512./44100,samplerate=44100,return_time=False):
 # Window for paulstretch is specifed so as to be equivalent to a window of 512 samples when using 
 # the default sample rate of 44100
     paulStretch_data = paulstretch(data,stretch,window,samplerate=samplerate)
@@ -73,26 +73,36 @@ def _interpolateTimes(times, stretch, data=None):
     times_interp_dt = np.array([datetime.datetime.fromtimestamp(ii) for ii in epoch_stretch])
     return times_interp_dt
 
-def paulstretch_dBdt(fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch, spacing,
-                     ps_window=512./44100,samplerate = 44100):
-    #3-days, factor=6
-    
-    times, dB_phi_data = _select_data_between_start_and_end_times(
-        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero
-    )
-    
-    paulStretch_dB_phi_zero = thm_fgm_paulstretch(times,dB_phi_data,stretch=stretch,window=ps_window,
-                                                  samplerate=samplerate,return_time=False)
-    #calculate dB/dt after time stretch 
-    stretch_spacing = spacing/stretch
-    dB_phi_dt_aft_stretch = np.diff(paulStretch_dB_phi_zero)/stretch_spacing
-    return dB_phi_dt_aft_stretch
-
 def _select_data_between_start_and_end_times(fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero):
     time_index = (fgs_gsm_time_itp >= start_time_plot) & (fgs_gsm_time_itp <= end_time_plot)
     times = fgs_gsm_time_itp[time_index]
     dB_phi_data = dB_phi_zero[time_index]
     return times,dB_phi_data
+
+def paul_stretch(fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch, spacing,
+                 ps_window=512./44100,samplerate = 44100,process_method='equal_loudness'):
+    """process_method: 'original_ts','dBdt_aft_stretch','equal_loudness'
+    """
+    
+    times, dB_phi_data = _select_data_between_start_and_end_times(
+        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero
+    )
+  
+    paulStretch_dB_phi_zero = _paul_stretch(times,dB_phi_data,stretch=stretch,window=ps_window,
+                                            samplerate=samplerate,return_time=False)
+    if process_method == 'original_ts':
+        return paulStretch_dB_phi_zero
+    
+    if process_method == 'dBdt_aft_stretch':
+        #calculate dB/dt after time stretch 
+        stretch_spacing = spacing/stretch
+        dB_phi_dt_aft_stretch = np.diff(paulStretch_dB_phi_zero)/stretch_spacing
+        return dB_phi_dt_aft_stretch
+
+    if process_method == 'equal_loudness':
+        equal_loudness_ts = equal_loudness_normalization(paulStretch_dB_phi_zero,samplerate,L_N=40)
+        return equal_loudness_ts
+
 
 def _waveletPitchShift(
     times,
@@ -189,10 +199,9 @@ def _wavelet_stretch(times,data,stretch=6,interpolateBefore=None,interpolateAfte
         data = fd(newTimes)
     return _waveletPitchShift(newTimes,data,stretch,scaleLogSpacing,interpolateAfter)
 
-def wavelet_stretch(
-    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
-    interpolateBefore=None,interpolateAfter=None,scaleLogSpacing=0.12
-):
+def wavelet_stretch(fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,spacing,
+                    interpolateBefore=None,interpolateAfter=None,scaleLogSpacing=0.12,
+                    process_method='equal_loudness', samplerate = 44100):
     """Extracts data in the specified time window and performs a wavelet time stretch
     on the data.
     """
@@ -204,22 +213,19 @@ def wavelet_stretch(
         times,dB_phi_data,stretch,interpolateBefore,interpolateAfter,scaleLogSpacing
     )
 
-    return wavelets_dB_phi_zero
+    if process_method == 'original_ts':
+        return wavelets_dB_phi_zero
+    
+    if process_method == 'dBdt_aft_stretch':
+        #calculate dB/dt after time stretch 
+        stretch_spacing = spacing/stretch
+        dB_phi_dt_aft_stretch = np.diff(wavelets_dB_phi_zero)/stretch_spacing
+        return dB_phi_dt_aft_stretch
 
-def wavelet_stretch_dBdt(
-    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch, spacing,
-    interpolateBefore=None,interpolateAfter=None,scaleLogSpacing=0.12
-):  
-    """Extracts data in the specified time window, performs a wavelet time stretch
-    on the data, finally, spectrally whitens the data using a time-wise difference (diff).
-    """
-    wavelets_dB_phi_zero = wavelet_stretch(
-        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
-        interpolateBefore,interpolateAfter,scaleLogSpacing
-    )
-    stretch_spacing = spacing/stretch
-    dB_phi_dt_aft_stretch = np.diff(wavelets_dB_phi_zero)/stretch_spacing
-    return dB_phi_dt_aft_stretch
+    if process_method == 'equal_loudness':
+        equal_loudness_ts = equal_loudness_normalization(wavelets_dB_phi_zero,samplerate,L_N=40)
+        return equal_loudness_ts
+    
 
 def _phaseVocoder_stretch(times,data,stretch,frameLength=512,synthesisHop=None) -> None:
         """Time stretches the data using a phase vocoder
@@ -251,10 +257,9 @@ def _phaseVocoder_stretch(times,data,stretch,frameLength=512,synthesisHop=None) 
         timeSeriesModification.run(reader, writer)
         return writer.data.flatten()
 
-def phaseVocoder_stretch(
-    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
-    frameLength=512,synthesisHop=None
-):
+def phaseVocoder_stretch(fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,spacing,
+                         frameLength=512,synthesisHop=None,process_method='equal_loudness', 
+                         samplerate = 44100):
     """Extracts data in the specified time window and performs a phase vocoder time stretch
     on the data.
     """
@@ -265,23 +270,20 @@ def phaseVocoder_stretch(
     phaseVocoder_dB_phi_zero = _phaseVocoder_stretch(
         times,dB_phi_data,stretch,frameLength,synthesisHop
     )
+    
+    if process_method == 'original_ts':
+        return phaseVocoder_dB_phi_zero
+    
+    if process_method == 'dBdt_aft_stretch':
+        #calculate dB/dt after time stretch 
+        stretch_spacing = spacing/stretch
+        dB_phi_dt_aft_stretch = np.diff(phaseVocoder_dB_phi_zero)/stretch_spacing
+        return dB_phi_dt_aft_stretch
 
-    return phaseVocoder_dB_phi_zero
-
-def phaseVocoder_stretch_dBdt(
-    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch, spacing,
-    frameLength=512,synthesisHop=None
-):  
-    """Extracts data in the specified time window, performs a phase-vocoder time stretch
-    on the data, finally, spectrally whitens the data using a time-wise difference (diff).
-    """
-    phaseVocoder_dB_phi_zero = phaseVocoder_stretch(
-        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
-        frameLength,synthesisHop
-    )
-    stretch_spacing = spacing/stretch
-    dB_phi_dt_aft_stretch = np.diff(phaseVocoder_dB_phi_zero)/stretch_spacing
-    return dB_phi_dt_aft_stretch
+    if process_method == 'equal_loudness':
+        equal_loudness_ts = equal_loudness_normalization(phaseVocoder_dB_phi_zero,samplerate,L_N=40)
+        return equal_loudness_ts
+    
 
 def _wsolaStretch(times,data,stretch,frameLength=512,synthesisHop=None,tolerance=None) -> None:
         """Time stretches the data using WSOLA
@@ -314,10 +316,9 @@ def _wsolaStretch(times,data,stretch,frameLength=512,synthesisHop=None,tolerance
         timeSeriesModification.run(reader, writer)
         return writer.data.flatten()
 
-def WSOLA_stretch(
-    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
-    frameLength=512,synthesisHop=None,tolerance=None
-):
+def WSOLA_stretch(fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,spacing,
+                  frameLength=512,synthesisHop=None,tolerance=None,process_method='equal_loudness', 
+                  samplerate = 44100):
     """Extracts data in the specified time window and performs a WOLSA time stretch
     on the data.
     """
@@ -328,20 +329,16 @@ def WSOLA_stretch(
     WSOLA_dB_phi_zero = _wsolaStretch(
         times,dB_phi_data,stretch,frameLength,synthesisHop,tolerance
     )
+    
+    if process_method == 'original_ts':
+        return WSOLA_dB_phi_zero
+    
+    if process_method == 'dBdt_aft_stretch':
+        #calculate dB/dt after time stretch 
+        stretch_spacing = spacing/stretch
+        dB_phi_dt_aft_stretch = np.diff(WSOLA_dB_phi_zero)/stretch_spacing
+        return dB_phi_dt_aft_stretch
 
-    return WSOLA_dB_phi_zero
-
-def WSOLA_stretch_dBdt(
-    fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch, spacing,
-    frameLength=512,synthesisHop=None,tolerance=None
-):  
-    """Extracts data in the specified time window, performs a WSOLA time stretch
-    on the data, finally, spectrally whitens the data using a time-wise difference (diff).
-    """
-    wsola_dB_phi_zero = WSOLA_stretch(
-        fgs_gsm_time_itp, start_time_plot, end_time_plot, dB_phi_zero, stretch,
-        frameLength,synthesisHop
-    )
-    stretch_spacing = spacing/stretch
-    dB_phi_dt_aft_stretch = np.diff(wsola_dB_phi_zero)/stretch_spacing
-    return dB_phi_dt_aft_stretch
+    if process_method == 'equal_loudness':
+        equal_loudness_ts = equal_loudness_normalization(WSOLA_dB_phi_zero,samplerate,L_N=40)
+        return equal_loudness_ts
