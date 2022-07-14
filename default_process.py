@@ -18,9 +18,9 @@ import ESA
 #ssl._create_default_https_context = ssl._create_unverified_context
 
 def process_data(
-    start_time=datetime.datetime(2008, 12, 7), end_time=datetime.datetime(2008, 12, 10),probe='thd', 
+    start_time=datetime.datetime(2008, 12, 7), end_time=datetime.datetime(2008, 12, 10),probe='the', 
     spacing = 3., pos_min = 5, stretch = 6, samplerate = 44100, filetype = ['wav'], 
-    filename_str='Events', stretchMethod='paulstretch_dBdt'
+    filename_str='Events', stretchMethod='wavelets',process_method='equal_loudness'
 ):
     """Principal data processing code.
     
@@ -85,54 +85,50 @@ def process_data(
     # Time stretching of data
     timeStretchingInputs = (Mag_data.fgs_gsm_time_itp, start_time, end_time, dB_phi_zero, stretch)
 
-    if stretchMethod == 'paulstretch_dBdt':
-        dB_phi_dt_aft_stretch = ps_utils.paulstretch_dBdt(
+    if stretchMethod == 'paulstretch':
+        ts_aft_stretch = ps_utils.paul_stretch(
             *timeStretchingInputs,spacing,
-            ps_window=512./44100, samplerate = samplerate
+            ps_window=512./44100, samplerate = samplerate,
+            process_method=process_method
         )
+            
     if stretchMethod == 'wavelets':
-        dB_phi_dt_aft_stretch = ps_utils.wavelet_stretch(
-            *timeStretchingInputs,
-            interpolateBefore=None, interpolateAfter=None, scaleLogSpacing=0.12
-        )
-    if stretchMethod == 'wavelets_dBdt':
-        dB_phi_dt_aft_stretch = ps_utils.wavelet_stretch_dBdt(
+        ts_aft_stretch = ps_utils.wavelet_stretch(
             *timeStretchingInputs,spacing,
-            interpolateBefore=None, interpolateAfter=None, scaleLogSpacing=0.12
+            interpolateBefore=None, interpolateAfter=None, 
+            scaleLogSpacing=0.12,process_method=process_method, 
+            samplerate = samplerate
         )
+
     if stretchMethod == 'phaseVocoder':
-        dB_phi_dt_aft_stretch = ps_utils.phaseVocoder_stretch(
-            *timeStretchingInputs,
-            frameLength=512,synthesisHop=None
-        )
-    if stretchMethod == 'phaseVocoder_dBdt':
-        dB_phi_dt_aft_stretch = ps_utils.phaseVocoder_stretch_dBdt(
+        ts_aft_stretch = ps_utils.phaseVocoder_stretch(
             *timeStretchingInputs,spacing,
-            frameLength=512,synthesisHop=None
+            frameLength=512,synthesisHop=None,process_method=process_method, 
+            samplerate = samplerate
         )
+        
     if stretchMethod == 'wsola':
-        dB_phi_dt_aft_stretch = ps_utils.WSOLA_stretch(
-            *timeStretchingInputs,
-            frameLength=512, synthesisHop=None
-        )
-    if stretchMethod == 'wsola_dBdt':
-        dB_phi_dt_aft_stretch = ps_utils.WSOLA_stretch_dBdt(
+        ts_aft_stretch = ps_utils.WSOLA_stretch(
             *timeStretchingInputs,spacing,
-            frameLength=512,synthesisHop=None
+            frameLength=512, synthesisHop=None,process_method=process_method, 
+            samplerate = samplerate
         )
+
 
     #Write sound file
     for ft in filetype:
         #Normalises the data set by the maximum in the interval.
-        dB_phi_dt_aft_stretch = dB_phi_dt_aft_stretch / np.max(np.abs(dB_phi_dt_aft_stretch))
+        ts_aft_stretch = ts_aft_stretch / np.max(np.abs(ts_aft_stretch))
         write_utils.write_sound_file(probe, start_time, end_time, stretch, 
-                                     dB_phi_dt_aft_stretch, samplerate, ft,
+                                     ts_aft_stretch, samplerate, ft,
                                      filename_str=filename_str,algorithm=stretchMethod)
         print('Write to %s sound file finished!' %(ft))
     
     #Plot detrended B_phi time series
     plot_utils.plot_time_series(start_time, end_time, Mag_data.fgs_gsm_time_itp, dB_phi_zero, 
-                                probe,filename_str=filename_str)
+                                probe, ylim=[-20,20],filename_str=filename_str)
+    plot_utils.plot_time_series(start_time, end_time, Mag_data.fgs_gsm_time_itp, dB_phi_zero, 
+                                probe, ylim=[-5,5],filename_str=filename_str)
     print('Plot time series finished!')
     
     #Plot dB_phi/dt spectra
@@ -143,10 +139,13 @@ def process_data(
 #start_time = datetime.datetime(2008,11,18,3,40)
 #end_time = datetime.datetime(2008,11,21,3,30)
 #probe='the'
-start_time = datetime.datetime(2011,2,4,4,8)
-end_time = datetime.datetime(2011,2,7,3,50)
-probe='the'
+#start_time = datetime.datetime(2012,3,17,2,54)
+#end_time = datetime.datetime(2012,3,20,2,42)
+#probe='the'
 
-stretchMethods = ['paulstretch_dBdt','wavelets','wavelets_dBdt','phaseVocoder','phaseVocoder_dBdt','wsola','wsola_dBdt']
-stretchMethod = stretchMethods[0]
-process_data(start_time=start_time, end_time=end_time,probe=probe,stretchMethod=stretchMethod,filename_str='Dawn_Active')
+#stretchMethods = ['paulstretch','wavelets','phaseVocoder','wsola']
+#process_methods=['equal_loudness','dBdt_aft_stretch','original_ts']
+#stretchMethod = stretchMethods[1]
+#process_method = process_methods[0]
+#process_data(start_time=start_time, end_time=end_time,probe=probe,filetype = ['wav','ogg'],
+#             filename_str='Dawn_Active_'+stretchMethod+'_'+process_method,stretchMethod=stretchMethod,process_method=process_method)
