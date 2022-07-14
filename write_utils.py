@@ -34,5 +34,5 @@ def write_sound_file(
     directory = 'outputs/'+filename_str+'_'+st_str
     if not os.path.exists(directory):
         os.mkdir(directory)
-    file_name = f'{probe.upper()}_dBphidt_{st_str}_{et_str}_{algorithm}_{str(stretch)}.{filetype}'
+    file_name = f'{probe.upper()}_{st_str}_{et_str}_{algorithm}_{str(stretch)}.{filetype}'
     sf.write(os.path.join(directory,file_name), data, samplerate)
