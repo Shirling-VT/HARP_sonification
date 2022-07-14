@@ -5,11 +5,14 @@ import pandas as pd
 import default_process
 
 def bp_event_lists(dir_events='event_list/'):
-    #filenames = ['Events_Dawn_Active.txt']
-    filenames = ['Events_Dawn_Active.txt','Events_Dawn_Moderate.txt','Events_Dawn_Quiet.txt',
-                 'Events_Dusk_Active.txt','Events_Dusk_Moderate.txt','Events_Dusk_Quiet.txt']
+    filenames = ['Events_Dawn_Active.txt']
+    #filenames = ['Events_Dawn_Active.txt','Events_Dawn_Moderate.txt','Events_Dawn_Quiet.txt',
+    #             'Events_Dusk_Active.txt','Events_Dusk_Moderate.txt','Events_Dusk_Quiet.txt']
     #filenames = ['Events_Dawn_Active.txt','Events_Dawn_Moderate.txt','Events_Dawn_Quiet.txt']
     #filenames = ['Events_Dusk_Active.txt','Events_Dusk_Moderate.txt','Events_Dusk_Quiet.txt']
+    stretchMethod = 'wavelets'
+    process_method = 'equal_loudness'
+
     for filename in filenames:
         df = pd.read_csv(dir_events+filename,header=0,
                          delim_whitespace=True)
@@ -23,7 +26,7 @@ def bp_event_lists(dir_events='event_list/'):
         
         #plot all events
         rd_ind=range(len(st_dt))
-        filename_str=filename[7:-4]
+        filename_str=filename[7:12]+stretchMethod
         probe='the'
         
         for ii in rd_ind:
@@ -41,6 +44,6 @@ def bp_event_lists(dir_events='event_list/'):
             print('Write to orbit info file finished!')
             
             default_process.process_data(start_time=start_time, end_time=end_time,probe=probe, 
-                                         spacing = 3., pos_min = 5, stretch = 6, samplerate = 44100, 
-                                         filetype = ['wav','ogg'],filename_str=filename_str)
+                                         filetype = ['wav','ogg'],filename_str=filename_str,
+                                         stretchMethod=stretchMethod,process_method=process_method)
 bp_event_lists()
