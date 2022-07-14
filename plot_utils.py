@@ -24,9 +24,9 @@ def plot_time_series(start_time, end_time, times, data, probe, ylim=[-20,20],fil
     if not os.path.exists(directory):
         os.mkdir(directory)
         
-    fn = Path(directory+'/'+probe.upper()+'_dBphi_ts_'+
+    fn = Path(directory+'/'+probe.upper()+'_ts_'+
               start_time.strftime("%Y%m%d")+'_'+
-              end_time.strftime("%Y%m%d")+'.png').expanduser()
+              end_time.strftime("%Y%m%d")+'_ylim'+str(ylim[1])+'.png').expanduser()
     fig.savefig(fn, dpi = 600, bbox_inches='tight',pad_inches = 0)
     
 def plot_spectra(start_time, end_time, times, data, spacing, probe,ylim=[1,100],
@@ -88,7 +88,7 @@ def plot_spectra(start_time, end_time, times, data, spacing, probe,ylim=[1,100],
                           norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')#
         ax1.set(xlim=xlim,ylim=ylim)
         ax1.set_yscale('log')
-        fn = Path(directory+'/'+probe.upper()+'_dBphidt_stft_'+
+        fn = Path(directory+'/'+probe.upper()+'_stft_'+
                   start_time.strftime("%Y%m%d")+'_'+end_time.strftime("%Y%m%d")+
                   '_dynamic.png').expanduser()
         fig1.savefig(fn, dpi = 600, bbox_inches='tight',pad_inches = 0)
@@ -108,7 +108,7 @@ def plot_spectra(start_time, end_time, times, data, spacing, probe,ylim=[1,100],
                           norm=colors.LogNorm(vmin=vmin, vmax=vmax), shading='auto')
         ax2.set(xlim=xlim,ylim=ylim)
         ax2.set_yscale('log')
-        fn = Path(directory+'/'+probe.upper()+'_dBphidt_stft_'+
+        fn = Path(directory+'/'+probe.upper()+'_stft_'+
                   start_time.strftime("%Y%m%d")+'_'+end_time.strftime("%Y%m%d")+
                   '_fix.png').expanduser()
         fig2.savefig(fn, dpi = 600, bbox_inches='tight',pad_inches = 0)
