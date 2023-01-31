@@ -14,14 +14,16 @@ import plot_utils
 import GSM
 import ESA
 
-
 # import ssl
 # ssl._create_default_https_context = ssl._create_unverified_context
+
+light_mode = False
+
 
 def process_data(
         start_time=datetime.datetime(2008, 12, 7), end_time=datetime.datetime(2008, 12, 10), probe='the',
         spacing=3., pos_min=5, stretch=6, samplerate=44100, filetype=None,
-        filename_str='Events', stretchMethod='wavelets', process_method='equal_loudness', enable_time_series = True
+        filename_str='Events', stretchMethod='wavelets', process_method='equal_loudness', enable_time_series=True
 ):
     """Principal data processing code.
     
@@ -133,8 +135,14 @@ def process_data(
         print('Plot time series finished!')
 
     # Plot dB_phi/dt spectra
+    fix_cb = True
+    dynamic_cb = True
+    if light_mode:
+        fix_cb = False
+        dynamic_cb = True
     plot_utils.plot_spectra(start_time, end_time, Mag_data.fgs_gsm_time_itp,
-                            dB_phi_zero, spacing, probe, filename_str=filename_str)
+                            dB_phi_zero, spacing, probe, filename_str=filename_str, fix_cb=fix_cb,
+                            dynamic_cb=dynamic_cb)
     print('Plot spectrogram finished!')
 
 
@@ -146,8 +154,6 @@ stretchMethods = ['paulstretch', 'wavelets', 'phaseVocoder', 'wsola']
 process_methods = ['equal_loudness', 'dBdt_aft_stretch', 'original_ts']
 stretchMethod = stretchMethods[1]
 process_method = process_methods[0]
-
-light_mode = False
 
 
 def start_from_orbit_file(file: str):
