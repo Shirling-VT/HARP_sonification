@@ -21,3 +21,14 @@ Install all the libraries
 ```shell
 pip install requirements.txt
 ```
+
+
+## Run program
+/!\ The ogg sound type can create error. Don't hesitate to remove it.
+```shell
+PathoTheProject\HARP_sonification\venv\Scripts\python.exe default_process.py
+```
+With orbit file
+```shell
+PathoTheProject\HARP_sonification\venv\Scripts\python.exe default_process.py --orbit_file THEMISE_Orbits_Feb2008_Nov2020.txt
+```
