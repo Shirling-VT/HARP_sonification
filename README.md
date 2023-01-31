@@ -32,3 +32,8 @@ With orbit file
 ```shell
 PathoTheProject\HARP_sonification\venv\Scripts\python.exe default_process.py --orbit_file THEMISE_Orbits_Feb2008_Nov2020.txt
 ```
+
+With orbit file and light mode HIGHLY RECOMMENDED
+```shell
+PathoTheProject\HARP_sonification\venv\Scripts\python.exe default_process.py --orbit_file THEMISE_Orbits_Feb2008_Nov2020.txt --light
+```

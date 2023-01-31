@@ -20,8 +20,8 @@ import ESA
 
 def process_data(
         start_time=datetime.datetime(2008, 12, 7), end_time=datetime.datetime(2008, 12, 10), probe='the',
-        spacing=3., pos_min=5, stretch=6, samplerate=44100, filetype=['wav'],
-        filename_str='Events', stretchMethod='wavelets', process_method='equal_loudness'
+        spacing=3., pos_min=5, stretch=6, samplerate=44100, filetype=None,
+        filename_str='Events', stretchMethod='wavelets', process_method='equal_loudness', enable_time_series = True
 ):
     """Principal data processing code.
     
@@ -125,11 +125,12 @@ def process_data(
         print('Write to %s sound file finished!' % (ft))
 
     # Plot detrended B_phi time series
-    plot_utils.plot_time_series(start_time, end_time, Mag_data.fgs_gsm_time_itp, dB_phi_zero,
-                                probe, ylim=[-20, 20], filename_str=filename_str)
-    plot_utils.plot_time_series(start_time, end_time, Mag_data.fgs_gsm_time_itp, dB_phi_zero,
-                                probe, ylim=[-5, 5], filename_str=filename_str)
-    print('Plot time series finished!')
+    if enable_time_series:
+        plot_utils.plot_time_series(start_time, end_time, Mag_data.fgs_gsm_time_itp, dB_phi_zero,
+                                    probe, ylim=[-20, 20], filename_str=filename_str)
+        plot_utils.plot_time_series(start_time, end_time, Mag_data.fgs_gsm_time_itp, dB_phi_zero,
+                                    probe, ylim=[-5, 5], filename_str=filename_str)
+        print('Plot time series finished!')
 
     # Plot dB_phi/dt spectra
     plot_utils.plot_spectra(start_time, end_time, Mag_data.fgs_gsm_time_itp,
@@ -145,6 +146,8 @@ stretchMethods = ['paulstretch', 'wavelets', 'phaseVocoder', 'wsola']
 process_methods = ['equal_loudness', 'dBdt_aft_stretch', 'original_ts']
 stretchMethod = stretchMethods[1]
 process_method = process_methods[0]
+
+light_mode = False
 
 
 def start_from_orbit_file(file: str):
@@ -180,10 +183,16 @@ def start_from_orbit_file(file: str):
             if start_date is not None and end_date is not None:
                 print("Processing from " + start_date_as_string + " to " + end_date_as_string)
 
-                process_data(start_time=start_date, end_time=end_date, probe=probe, filetype=['wav', 'ogg'],
+                file_types = ['wav', 'ogg']
+                enable_time_series = True
+                if light_mode:
+                    file_types = []
+                    enable_time_series = False
+
+                process_data(start_time=start_date, end_time=end_date, probe=probe, filetype=file_types,
                              filename_str='Dawn_Active_' + stretchMethod + '_' + process_method,
                              stretchMethod=stretchMethod,
-                             process_method=process_method)
+                             process_method=process_method, enable_time_series=enable_time_series)
 
                 print("End of processing")
 
@@ -199,6 +208,10 @@ def start_from_default():
 import sys
 
 if len(sys.argv) > 0:
+    if "--light" in sys.argv or "--LIGHT" in sys.argv:
+        print("Enabling light mode. Only the spectrograms will be generated")
+        light_mode = True
+
     if sys.argv[1].upper() == "--ORBIT_FILE":
         if len(sys.argv) < 2:
             raise Exception("You must specify an orbit file")
