@@ -45,10 +45,11 @@ def process_data(
     State_data.interpolate(Mag_data.fgs_gsm_epoch_itp)
 
     # save original 1 min resolution position file
-    write_utils.write_pos_file(start_time, end_time, State_data.pos_time,
+    if not light_mode:
+        write_utils.write_pos_file(start_time, end_time, State_data.pos_time,
                                State_data.pos_x, State_data.pos_y, State_data.pos_z,
                                probe, filename_str=filename_str)
-    print('Write to satellite position file finished!')
+        print('Write to satellite position file finished!')
 
     # load electron moments data from CDAWeb for magnetosheath interval identification
     ESA_data = ESA.ESA()
