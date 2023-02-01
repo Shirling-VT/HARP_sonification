@@ -92,7 +92,7 @@ def plot_spectra(start_time, end_time, times, data, spacing, probe, ylim=[1, 100
                   start_time.strftime("%Y%m%d") + '_' + end_time.strftime("%Y%m%d") +
                   '_dynamic.png').expanduser()
         fig1.savefig(fn, dpi=600, bbox_inches='tight', pad_inches=0)
-        fig1.cla()
+        fig1.clf()
         ax1.cla()
 
     if fix_cb:
